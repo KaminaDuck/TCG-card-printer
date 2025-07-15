@@ -1,6 +1,6 @@
-# MTG Card Printer
+# TCG Card Printer
 
-Automated system for printing Magic: The Gathering card images on a Canon G3270 printer.
+Automated system for printing trading card game cards such as Magic: The Gathering on a Canon G3270 printer.
 
 ## Features
 
