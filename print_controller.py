@@ -48,7 +48,7 @@ class PrintController:
         if not image_path.exists():
             raise FileNotFoundError(f"Image not found: {image_path}")
         
-        # Default print options for MTG cards
+        # Default print options for TCG cards
         print_options = {
             'media': 'Custom.2.5x3.5in',  # Custom paper size
             'MediaType': 'Cardstock',      # Media type
@@ -68,7 +68,7 @@ class PrintController:
             job_id = self.conn.printFile(
                 self.printer_name,
                 str(image_path),
-                f"MTG Card - {image_path.stem}",
+                f"TCG Card - {image_path.stem}",
                 print_options
             )
             
@@ -80,7 +80,7 @@ class PrintController:
             raise
     
     def setup_custom_paper_size(self):
-        """Setup custom paper size for MTG cards"""
+        """Setup custom paper size for TCG cards"""
         # This is system-specific and may require manual setup
         logger.info("Setting up custom paper size (2.5x3.5 inches)...")
         
@@ -88,7 +88,7 @@ class PrintController:
             # On macOS, custom paper sizes are typically added through System Preferences
             logger.info("On macOS, please add custom paper size through:")
             logger.info("System Preferences > Printers & Scanners > Your Printer > Options & Supplies > Options > Custom Size")
-            logger.info("Name: MTG Card")
+            logger.info("Name: TCG Card")
             logger.info("Width: 2.5 inches (63.5 mm)")
             logger.info("Height: 3.5 inches (88.9 mm)")
             logger.info("Margins: 0.1 inches (2.54 mm) on all sides")

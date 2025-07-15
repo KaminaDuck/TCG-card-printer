@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test script for MTG Card Printer components"""
+"""Test script for TCG Card Printer components"""
 
 import sys
 from pathlib import Path
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 def create_test_card(output_path, text="TEST CARD"):
-    """Create a test MTG card image"""
-    # Create a test image with MTG card dimensions
+    """Create a test TCG card image"""
+    # Create a test image with TCG card dimensions
     img = Image.new('RGB', (750, 1050), color='white')
     draw = ImageDraw.Draw(img)
     
@@ -134,7 +134,7 @@ def test_print_sample():
 
 def main():
     """Run all tests"""
-    print("\nMTG Card Printer Test Suite")
+    print("\nTCG Card Printer Test Suite")
     print("=" * 50)
     
     tests = [

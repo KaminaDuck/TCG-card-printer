@@ -1,11 +1,11 @@
-"""Configuration settings for MTG Card Printer"""
+"""Configuration settings for TCG Card Printer"""
 
 import os
 from pathlib import Path
 
 # Directories
 BASE_DIR = Path(__file__).parent.absolute()
-WATCH_FOLDER = BASE_DIR / "mtg_cards_input"
+WATCH_FOLDER = BASE_DIR / "tcg_cards_input"
 PROCESSED_FOLDER = BASE_DIR / "processed"
 LOG_DIR = BASE_DIR / "logs"
 

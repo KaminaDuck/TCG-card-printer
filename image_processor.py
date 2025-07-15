@@ -1,4 +1,4 @@
-"""Image processing module for MTG card preparation"""
+"""Image processing module for TCG card preparation"""
 
 import logging
 from pathlib import Path
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImageProcessor:
-    """Process MTG card images for optimal printing"""
+    """Process TCG card images for optimal printing"""
     
     def __init__(self, target_width=config.TARGET_WIDTH, target_height=config.TARGET_HEIGHT):
         self.target_width = target_width

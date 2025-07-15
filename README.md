@@ -1,6 +1,6 @@
 # TCG Card Printer
 
-Automated system for printing trading card game cards such as Magic: The Gathering on a Canon G3270 printer.
+Automated system for printing trading card game cards on a Canon G3270 printer.
 
 ## Features
 
@@ -28,7 +28,7 @@ Automated system for printing trading card game cards such as Magic: The Gatheri
 3. Configure printer settings:
    - Add custom paper size (2.5" x 3.5") in printer settings
    - On macOS: System Preferences > Printers & Scanners > Canon G3270 > Options & Supplies > Options
-   - Name: "MTG Card" or "Custom.2.5x3.5in"
+   - Name: "TCG Card" or "Custom.2.5x3.5in"
    - Margins: 0.1" on all sides (minimum)
 
 4. Update printer name in `config.py` if needed:
@@ -40,11 +40,11 @@ Automated system for printing trading card game cards such as Magic: The Gatheri
 
 1. **Run the printer daemon:**
    ```bash
-   python mtg_card_printer.py
+   python tcg_card_printer.py
    ```
 
 2. **Add card images:**
-   - Drop MTG card images into the `mtg_cards_input` folder
+   - Drop TCG card images into the `tcg_cards_input` folder
    - Supported formats: JPG, PNG, BMP, TIFF
    - Images are automatically processed and printed
 
@@ -67,8 +67,8 @@ This will test:
 ## File Structure
 
 ```
-mtg-card-printer/
-├── mtg_card_printer.py    # Main application
+tcg-card-printer/
+├── tcg_card_printer.py    # Main application
 ├── config.py              # Configuration settings
 ├── folder_monitor.py      # File system monitoring
 ├── image_processor.py     # Image resizing/optimization
@@ -76,7 +76,7 @@ mtg-card-printer/
 ├── logger_setup.py        # Logging configuration
 ├── test_printer.py        # Test suite
 ├── requirements.txt       # Python dependencies
-├── mtg_cards_input/       # Drop card images here
+├── tcg_cards_input/       # Drop card images here
 ├── processed/             # Processed images stored here
 └── logs/                  # Application logs
 ```

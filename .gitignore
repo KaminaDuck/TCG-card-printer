@@ -1,5 +1,5 @@
 processed/
-mtg_cards_input/
+tcg_cards_input/
 logs/
 .venv/
 __pycache__/

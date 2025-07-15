@@ -32,7 +32,7 @@ def setup_logging():
     root_logger.addHandler(console_handler)
     
     # File handler - rotates daily
-    log_file = config.LOG_DIR / f"mtg_printer_{datetime.now().strftime('%Y%m%d')}.log"
+    log_file = config.LOG_DIR / f"tcg_printer_{datetime.now().strftime('%Y%m%d')}.log"
     file_handler = logging.handlers.RotatingFileHandler(
         log_file,
         maxBytes=10*1024*1024,  # 10MB

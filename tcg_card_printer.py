@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Main MTG Card Printer Application"""
+"""Main TCG Card Printer Application"""
 
 import sys
 import signal
@@ -18,7 +18,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-class MTGCardPrinter:
+class TCGCardPrinter:
     """Main application orchestrator"""
     
     def __init__(self):
@@ -41,7 +41,7 @@ class MTGCardPrinter:
     
     def initialize(self):
         """Initialize all components"""
-        logger.info("Initializing MTG Card Printer...")
+        logger.info("Initializing TCG Card Printer...")
         
         # Initialize print controller
         try:
@@ -147,7 +147,7 @@ class MTGCardPrinter:
             # Start monitoring
             self.folder_monitor.start()
             
-            logger.info("MTG Card Printer is running. Drop card images into:")
+            logger.info("TCG Card Printer is running. Drop card images into:")
             logger.info(f"  {config.WATCH_FOLDER}")
             logger.info("Press Ctrl+C to stop.")
             
@@ -169,7 +169,7 @@ class MTGCardPrinter:
     
     def stop(self):
         """Stop the application"""
-        logger.info("Stopping MTG Card Printer...")
+        logger.info("Stopping TCG Card Printer...")
         self.running = False
         
         if self.folder_monitor:
@@ -180,16 +180,16 @@ class MTGCardPrinter:
         if error_summary['total_errors'] > 0:
             logger.warning(f"Session ended with {error_summary['total_errors']} errors")
         
-        logger.info("MTG Card Printer stopped")
+        logger.info("TCG Card Printer stopped")
 
 
 def main():
     """Main entry point"""
-    print("MTG Card Printer v1.0")
+    print("TCG Card Printer v1.0")
     print("=" * 50)
     
     try:
-        app = MTGCardPrinter()
+        app = TCGCardPrinter()
         app.initialize()
         app.run()
     except Exception as e:

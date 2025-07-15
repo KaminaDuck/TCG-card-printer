@@ -62,7 +62,7 @@ class CardImageHandler(FileSystemEventHandler):
 
 
 class FolderMonitor:
-    """Monitor a folder for new MTG card images"""
+    """Monitor a folder for new TCG card images"""
     
     def __init__(self, watch_folder, image_processor_callback):
         self.watch_folder = Path(watch_folder)
