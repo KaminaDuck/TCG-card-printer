@@ -1,0 +1,6 @@
+processed/
+mtg_cards_input/
+logs/
+.venv/
+__pycache__/
+.DS_Store
