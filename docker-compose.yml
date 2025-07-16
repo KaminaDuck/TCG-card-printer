@@ -1,0 +1,55 @@
+services:
+  tcg-printer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # Container name for easy reference
+    container_name: tcg-card-printer
+    
+    # Volume mounts for persistent data and CUPS access
+    volumes:
+      # Input folder - update path to match your host system
+      - ./tcg_cards_input:/app/tcg_cards_input
+      
+      # Processed folder - optional, remove if not needed
+      - ./processed:/app/processed
+      
+      # Logs folder - optional, remove if not needed
+      - ./logs:/app/logs
+      
+      # CUPS socket for printer access - required
+      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+    
+    # Environment variables for configuration
+    environment:
+      # Python unbuffered output for real-time logging
+      PYTHONUNBUFFERED: 1
+      
+      # Printer configuration - update to match your printer
+      TCG_PRINTER_NAME: "Canon_G3070_series"
+      
+      # Auto-delete behavior (true/false)
+      TCG_AUTO_DELETE: "false"
+      
+      # Optional: Override other settings as needed
+      # TCG_DPI: "300"
+      # TCG_WATCH_FOLDER: "/app/tcg_cards_input"
+      # TCG_PROCESSED_FOLDER: "/app/processed"
+      # TCG_LOG_DIR: "/app/logs"
+    
+    # Restart policy for reliability
+    restart: unless-stopped
+    
+    # Optional: Resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 512M
+
+# Named volumes (optional - use if you prefer named volumes over bind mounts)
+# volumes:
+#   tcg_input:
+#   tcg_processed:
+#   tcg_logs:

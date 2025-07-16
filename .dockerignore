@@ -1,0 +1,46 @@
+# Folders that will be mounted as volumes
+tcg_cards_input/
+processed/
+logs/
+
+# Version control
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# OS specific files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Documentation
+README.md
+*.md
+
+# Test images and sample data
+test_images/
+samples/
+*.test.*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker files (prevent recursive inclusion)
+docker-compose.yml
+docker-compose.*.yml

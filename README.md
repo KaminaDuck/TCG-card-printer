@@ -52,6 +52,120 @@ Automated system for printing trading card game cards on a Canon G3270 printer.
    - Check console output for status
    - View detailed logs in `logs/` directory
 
+## Docker Usage
+
+### Building the Container
+
+Build the Docker image locally:
+
+```bash
+docker build -t tcg-card-printer .
+```
+
+For specific platforms:
+```bash
+docker build --platform linux/amd64 -t tcg-card-printer .
+```
+
+### Running with Docker
+
+Basic docker run command with required volume mounts:
+
+```bash
+docker run -d \
+  --name tcg-printer \
+  -v $(pwd)/tcg_cards_input:/app/tcg_cards_input \
+  -v $(pwd)/processed:/app/processed \
+  -v $(pwd)/logs:/app/logs \
+  -v /var/run/cups/cups.sock:/var/run/cups/cups.sock \
+  -e TCG_PRINTER_NAME="Canon_G3070_series" \
+  -e TCG_AUTO_DELETE="false" \
+  -e PYTHONUNBUFFERED=1 \
+  tcg-card-printer
+```
+
+**Volume Mount Explanation:**
+- `tcg_cards_input`: Input folder where you drop card images
+- `processed`: Folder where processed images are stored (optional)
+- `logs`: Application logs for debugging (optional)
+- `/var/run/cups/cups.sock`: CUPS socket for printer access (required)
+
+### Running with Docker Compose
+
+The easiest way to run the container is using the provided `docker-compose.yml`:
+
+```bash
+# Start the container
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
+```
+
+**Customizing Volume Paths:**
+
+Edit `docker-compose.yml` to match your host system paths:
+
+```yaml
+volumes:
+  - /path/to/your/input:/app/tcg_cards_input
+  - /path/to/your/processed:/app/processed
+  - /path/to/your/logs:/app/logs
+```
+
+### Container Configuration
+
+**Available Environment Variables:**
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TCG_WATCH_FOLDER` | Input folder path | `/app/tcg_cards_input` |
+| `TCG_PROCESSED_FOLDER` | Processed folder path | `/app/processed` |
+| `TCG_LOG_DIR` | Log directory path | `/app/logs` |
+| `TCG_PRINTER_NAME` | CUPS printer name | `Canon_G3070_series` |
+| `TCG_AUTO_DELETE` | Delete after print | `false` |
+| `TCG_DPI` | Print resolution | `300` |
+| `PYTHONUNBUFFERED` | Real-time logging | `1` |
+
+**Printer Setup for Containers:**
+
+1. Ensure CUPS is running on the host system
+2. Configure printer and custom paper size on the host
+3. Verify printer name with `lpstat -p`
+4. Update `TCG_PRINTER_NAME` environment variable to match
+
+### Troubleshooting Container Issues
+
+**Volume Mount Permission Issues:**
+```bash
+# Fix permissions on host directories
+chmod 755 tcg_cards_input processed logs
+```
+
+**CUPS Connectivity Problems:**
+- Ensure CUPS socket exists: `ls -la /var/run/cups/cups.sock`
+- Check CUPS service: `sudo systemctl status cups`
+- Verify container can access socket: `docker exec tcg-printer ls -la /var/run/cups/`
+
+**Container Networking:**
+- The container uses host CUPS socket, not network access
+- No port mapping required
+
+**Log Access and Debugging:**
+```bash
+# View container logs
+docker logs tcg-printer
+
+# Access container shell
+docker exec -it tcg-printer /bin/bash
+
+# Check application logs
+docker exec tcg-printer cat /app/logs/tcg_printer.log
+```
+
 ## Testing
 
 Run the test suite to verify setup:
