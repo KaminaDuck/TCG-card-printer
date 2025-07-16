@@ -51,11 +51,27 @@ PRINTER_NAME="Canon_G3070_series"
 AUTO_DELETE="false"
 DETACHED="-d"
 
+# Network printing configuration
+USE_NETWORK_PRINTING="false"
+CUPS_SERVER_HOST="localhost"
+CUPS_SERVER_PORT="631"
+IPP_PRINTER_URI=""
+
+# Security and resource options
+ENABLE_SECURITY="false"
+MEMORY_LIMIT=""
+CPU_LIMIT=""
+NETWORK=""
+
+# Monitoring options
+ENABLE_HEALTH_CHECK="false"
+ENABLE_MONITORING="false"
+
 # Function to show usage
 show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
-    echo "Options:"
+    echo "Basic Options:"
     echo "  -i, --input DIR      Input directory (default: ./tcg_cards_input)"
     echo "  -p, --processed DIR  Processed directory (default: ./processed)"
     echo "  -l, --logs DIR       Logs directory (default: ./logs)"
@@ -63,17 +79,37 @@ show_usage() {
     echo "  --auto-delete        Enable auto-delete after print"
     echo "  --interactive        Run in interactive mode (not detached)"
     echo "  --rm                 Remove container after exit"
+    echo ""
+    echo "Network Printing Options:"
+    echo "  --network-printing   Use network printing instead of CUPS socket"
+    echo "  --cups-host HOST     CUPS server hostname (default: localhost)"
+    echo "  --cups-port PORT     CUPS server port (default: 631)"
+    echo "  --ipp-uri URI        IPP printer URI"
+    echo ""
+    echo "Security Options:"
+    echo "  --enable-security    Enable security hardening (recommended)"
+    echo "  --memory LIMIT       Memory limit (e.g., 512m, 1g)"
+    echo "  --cpu LIMIT          CPU limit (e.g., 0.5, 1)"
+    echo "  --network NAME       Custom Docker network"
+    echo ""
+    echo "Monitoring Options:"
+    echo "  --health-check       Enable container health checks"
+    echo "  --monitor            Enable resource monitoring"
+    echo ""
     echo "  -h, --help          Show this help message"
     echo ""
     echo "Examples:"
     echo "  # Run with default settings"
     echo "  $0"
     echo ""
-    echo "  # Run with custom input directory"
-    echo "  $0 -i /path/to/cards"
+    echo "  # Run with security hardening and resource limits"
+    echo "  $0 --enable-security --memory 512m --cpu 0.5"
+    echo ""
+    echo "  # Run with network printing"
+    echo "  $0 --network-printing --cups-host printer-server.local"
     echo ""
     echo "  # Run interactively for debugging"
-    echo "  $0 --interactive"
+    echo "  $0 --interactive --health-check"
 }
 
 # Parse command line arguments
@@ -105,6 +141,46 @@ while [[ $# -gt 0 ]]; do
             ;;
         --rm)
             REMOVE="--rm"
+            shift
+            ;;
+        --network-printing)
+            USE_NETWORK_PRINTING="true"
+            shift
+            ;;
+        --cups-host)
+            CUPS_SERVER_HOST="$2"
+            shift 2
+            ;;
+        --cups-port)
+            CUPS_SERVER_PORT="$2"
+            shift 2
+            ;;
+        --ipp-uri)
+            IPP_PRINTER_URI="$2"
+            shift 2
+            ;;
+        --enable-security)
+            ENABLE_SECURITY="true"
+            shift
+            ;;
+        --memory)
+            MEMORY_LIMIT="$2"
+            shift 2
+            ;;
+        --cpu)
+            CPU_LIMIT="$2"
+            shift 2
+            ;;
+        --network)
+            NETWORK="$2"
+            shift 2
+            ;;
+        --health-check)
+            ENABLE_HEALTH_CHECK="true"
+            shift
+            ;;
+        --monitor)
+            ENABLE_MONITORING="true"
             shift
             ;;
         -h|--help)
@@ -169,16 +245,72 @@ if docker ps -a | grep -q "$CONTAINER_NAME"; then
 fi
 
 # Build docker run command
-RUN_CMD="docker run $DETACHED $REMOVE \
-    --name $CONTAINER_NAME \
-    -v \"$INPUT_DIR:/app/tcg_cards_input\" \
-    -v \"$PROCESSED_DIR:/app/processed\" \
-    -v \"$LOGS_DIR:/app/logs\" \
-    -v /var/run/cups/cups.sock:/var/run/cups/cups.sock \
-    -e TCG_PRINTER_NAME=\"$PRINTER_NAME\" \
-    -e TCG_AUTO_DELETE=\"$AUTO_DELETE\" \
-    -e PYTHONUNBUFFERED=1 \
-    ${IMAGE_NAME}:${IMAGE_TAG}"
+RUN_CMD="docker run $DETACHED $REMOVE"
+
+# Add container name
+RUN_CMD="$RUN_CMD --name $CONTAINER_NAME"
+
+# Add security options
+if [ "$ENABLE_SECURITY" = "true" ]; then
+    RUN_CMD="$RUN_CMD --security-opt no-new-privileges:true"
+    RUN_CMD="$RUN_CMD --cap-drop ALL"
+    RUN_CMD="$RUN_CMD --cap-add CHOWN --cap-add SETUID --cap-add SETGID"
+    RUN_CMD="$RUN_CMD --user 1000:1000"
+    print_info "Security hardening enabled"
+fi
+
+# Add resource limits
+if [ ! -z "$MEMORY_LIMIT" ]; then
+    RUN_CMD="$RUN_CMD --memory $MEMORY_LIMIT"
+fi
+if [ ! -z "$CPU_LIMIT" ]; then
+    RUN_CMD="$RUN_CMD --cpus $CPU_LIMIT"
+fi
+
+# Add volume mounts
+RUN_CMD="$RUN_CMD -v \"$INPUT_DIR:/app/tcg_cards_input\""
+RUN_CMD="$RUN_CMD -v \"$PROCESSED_DIR:/app/processed\""
+RUN_CMD="$RUN_CMD -v \"$LOGS_DIR:/app/logs\""
+
+# Add CUPS socket or network printing configuration
+if [ "$USE_NETWORK_PRINTING" = "true" ]; then
+    print_info "Using network printing configuration"
+    # Don't mount CUPS socket for network printing
+    if [ ! -z "$CUPS_SERVER_HOST" ]; then
+        RUN_CMD="$RUN_CMD -e TCG_USE_NETWORK_PRINTING=true"
+        RUN_CMD="$RUN_CMD -e TCG_CUPS_SERVER_HOST=$CUPS_SERVER_HOST"
+        RUN_CMD="$RUN_CMD -e TCG_CUPS_SERVER_PORT=$CUPS_SERVER_PORT"
+        print_info "CUPS server: $CUPS_SERVER_HOST:$CUPS_SERVER_PORT"
+    fi
+    if [ ! -z "$IPP_PRINTER_URI" ]; then
+        RUN_CMD="$RUN_CMD -e TCG_IPP_PRINTER_URI=$IPP_PRINTER_URI"
+        print_info "IPP printer URI: $IPP_PRINTER_URI"
+    fi
+else
+    RUN_CMD="$RUN_CMD -v /var/run/cups/cups.sock:/var/run/cups/cups.sock"
+    print_info "Using local CUPS socket"
+fi
+
+# Add environment variables
+RUN_CMD="$RUN_CMD -e TCG_PRINTER_NAME=\"$PRINTER_NAME\""
+RUN_CMD="$RUN_CMD -e TCG_AUTO_DELETE=\"$AUTO_DELETE\""
+RUN_CMD="$RUN_CMD -e PYTHONUNBUFFERED=1"
+
+# Add health check if enabled
+if [ "$ENABLE_HEALTH_CHECK" = "true" ]; then
+    RUN_CMD="$RUN_CMD --health-cmd '/app/scripts/health-check.sh basic'"
+    RUN_CMD="$RUN_CMD --health-interval 30s"
+    RUN_CMD="$RUN_CMD --health-timeout 10s"
+    RUN_CMD="$RUN_CMD --health-retries 3"
+fi
+
+# Add custom network if specified
+if [ ! -z "$NETWORK" ]; then
+    RUN_CMD="$RUN_CMD --network $NETWORK"
+fi
+
+# Add final image name
+RUN_CMD="$RUN_CMD ${IMAGE_NAME}:${IMAGE_TAG}"
 
 # Run container
 print_status "Starting TCG Card Printer container..."

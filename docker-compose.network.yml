@@ -1,0 +1,244 @@
+# Docker Compose configuration for TCG Card Printer with Network Printing
+# This configuration is designed for network-based printing scenarios where
+# CUPS socket mounting is not available or desired
+
+services:
+  tcg-printer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # Container name for easy reference
+    container_name: tcg-card-printer-network
+    
+    # Image name for reference
+    image: tcg-card-printer:latest
+    
+    # Security options (enhanced for network deployment)
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    
+    # User mapping for file permissions
+    user: "1000:1000"
+    
+    # Volume mounts (no CUPS socket required)
+    volumes:
+      # Input folder - update path to match your host system
+      - ./tcg_cards_input:/app/tcg_cards_input
+      
+      # Processed folder - optional, remove if not needed
+      - ./processed:/app/processed
+      
+      # Logs folder - optional, remove if not needed
+      - ./logs:/app/logs
+    
+    # Environment variables for network printing
+    environment:
+      # Python unbuffered output for real-time logging
+      PYTHONUNBUFFERED: 1
+      
+      # Network printing configuration
+      TCG_USE_NETWORK_PRINTING: "true"
+      
+      # CUPS server configuration
+      TCG_CUPS_SERVER_HOST: "${CUPS_SERVER_HOST:-cups-server}"
+      TCG_CUPS_SERVER_PORT: "${CUPS_SERVER_PORT:-631}"
+      TCG_CUPS_SERVER_ENCRYPTION: "${CUPS_SERVER_ENCRYPTION:-false}"
+      
+      # Optional authentication
+      # TCG_CUPS_SERVER_USERNAME: "${CUPS_USERNAME:-}"
+      # TCG_CUPS_SERVER_PASSWORD: "${CUPS_PASSWORD:-}"
+      
+      # IPP printer URI (alternative to CUPS server)
+      # TCG_IPP_PRINTER_URI: "${IPP_PRINTER_URI:-}"
+      
+      # Printer configuration
+      TCG_PRINTER_NAME: "${PRINTER_NAME:-Canon_G3070_series}"
+      
+      # Auto-delete behavior (true/false)
+      TCG_AUTO_DELETE: "${AUTO_DELETE:-false}"
+      
+      # Health check configuration
+      TCG_HEALTH_CHECK_ENABLED: "true"
+      TCG_HEALTH_CHECK_INTERVAL: "30"
+      
+      # Resource monitoring
+      TCG_ENABLE_RESOURCE_MONITORING: "false"
+      TCG_MAX_MEMORY_MB: "512"
+      TCG_MAX_CPU_PERCENT: "80"
+      
+      # Optional settings
+      TCG_DPI: "${DPI:-300}"
+      TCG_MEDIA_TYPE: "${MEDIA_TYPE:-Cardstock}"
+      TCG_PAPER_SIZE: "${PAPER_SIZE:-Custom.2.5x3.5in}"
+      TCG_LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      TCG_JPEG_QUALITY: "${JPEG_QUALITY:-95}"
+    
+    # Health check configuration
+    healthcheck:
+      test: ["/app/scripts/health-check.sh", "detailed"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    
+    # Network configuration for distributed deployment
+    networks:
+      - printing-network
+    
+    # Restart policy for reliability
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Dependencies (optional - if using CUPS server container)
+    depends_on:
+      cups-server:
+        condition: service_healthy
+
+  # Optional: CUPS server container for development/testing
+  cups-server:
+    image: olbat/cupsd:latest
+    container_name: cups-server
+    
+    # CUPS server configuration
+    environment:
+      CUPSADMIN: admin
+      CUPSPASSWORD: admin
+    
+    # Expose CUPS port
+    ports:
+      - "631:631"
+    
+    # CUPS data persistence
+    volumes:
+      - cups-config:/etc/cups
+      - cups-spool:/var/spool/cups
+    
+    # Health check for CUPS server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:631/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # Network configuration
+    networks:
+      - printing-network
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+  # Optional: Print queue monitoring service
+  print-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: tcg-print-monitor
+    
+    # Override command for monitoring
+    command: ["python", "-c", "
+import time
+import subprocess
+import logging
+from config import *
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('print-monitor')
+
+while True:
+    try:
+        # Check printer status
+        result = subprocess.run(['lpstat', '-p'], capture_output=True, text=True)
+        logger.info(f'Printer Status: {result.stdout}')
+        
+        # Check queue status  
+        result = subprocess.run(['lpstat', '-o'], capture_output=True, text=True)
+        if result.stdout.strip():
+            logger.info(f'Print Queue: {result.stdout}')
+        else:
+            logger.info('Print queue is empty')
+            
+    except Exception as e:
+        logger.error(f'Monitor error: {e}')
+        
+    time.sleep(60)
+"]
+    
+    # Environment for monitoring
+    environment:
+      TCG_USE_NETWORK_PRINTING: "true"
+      TCG_CUPS_SERVER_HOST: "${CUPS_SERVER_HOST:-cups-server}"
+      TCG_CUPS_SERVER_PORT: "${CUPS_SERVER_PORT:-631}"
+      PYTHONUNBUFFERED: 1
+    
+    # Networks
+    networks:
+      - printing-network
+    
+    # Dependencies
+    depends_on:
+      - cups-server
+    
+    # Resource limits (minimal for monitoring)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Only enable if monitoring is desired
+    profiles:
+      - monitoring
+
+# Network definition for print services
+networks:
+  printing-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Named volumes for CUPS server data
+volumes:
+  cups-config:
+    driver: local
+  cups-spool:
+    driver: local
+
+# Service profiles for different deployment scenarios
+# Use with: docker-compose --profile monitoring up
+# Profiles:
+# - monitoring: Includes print queue monitoring service
+# - development: Includes CUPS server for local development
+# - production: Minimal setup for production deployment

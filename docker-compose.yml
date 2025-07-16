@@ -7,6 +7,22 @@ services:
     # Container name for easy reference
     container_name: tcg-card-printer
     
+    # Image name for reference
+    image: tcg-card-printer:latest
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    
+    # User mapping for file permissions
+    user: "1000:1000"
+    
     # Volume mounts for persistent data and CUPS access
     volumes:
       # Input folder - update path to match your host system
@@ -32,21 +48,59 @@ services:
       # Auto-delete behavior (true/false)
       TCG_AUTO_DELETE: "false"
       
+      # Health check configuration
+      TCG_HEALTH_CHECK_ENABLED: "true"
+      TCG_HEALTH_CHECK_INTERVAL: "30"
+      
+      # Resource monitoring
+      TCG_ENABLE_RESOURCE_MONITORING: "false"
+      TCG_MAX_MEMORY_MB: "512"
+      TCG_MAX_CPU_PERCENT: "80"
+      
       # Optional: Override other settings as needed
       # TCG_DPI: "300"
-      # TCG_WATCH_FOLDER: "/app/tcg_cards_input"
-      # TCG_PROCESSED_FOLDER: "/app/processed"
-      # TCG_LOG_DIR: "/app/logs"
+      # TCG_MEDIA_TYPE: "Cardstock"
+      # TCG_PAPER_SIZE: "Custom.2.5x3.5in"
+      # TCG_LOG_LEVEL: "INFO"
+      # TCG_JPEG_QUALITY: "95"
+      
+      # Network printing options (alternative to CUPS socket)
+      # TCG_USE_NETWORK_PRINTING: "false"
+      # TCG_CUPS_SERVER_HOST: "localhost"
+      # TCG_CUPS_SERVER_PORT: "631"
+      # TCG_CUPS_SERVER_ENCRYPTION: "false"
+      # TCG_IPP_PRINTER_URI: "ipp://printer.local:631/printers/Canon_G3070"
+    
+    # Health check configuration
+    healthcheck:
+      test: ["/app/scripts/health-check.sh", "basic"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     
     # Restart policy for reliability
     restart: unless-stopped
     
-    # Optional: Resource limits
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '1'
-    #       memory: 512M
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Network mode - can be changed to custom network if needed
+    network_mode: bridge
 
 # Named volumes (optional - use if you prefer named volumes over bind mounts)
 # volumes:
